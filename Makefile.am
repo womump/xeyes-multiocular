@@ -35,3 +35,4 @@ xeyes_SOURCES =	\
 dist_man_MANS = \
         xeyes.man
 
+EXTRA_DIST = eyes.bit eyesmask.bit
