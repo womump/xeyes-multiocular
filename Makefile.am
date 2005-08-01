@@ -32,7 +32,7 @@ xeyes_SOURCES =	\
         transform.h \
         xeyes.c
 
-dist_man_MANS = \
+dist_man1_MANS = \
         xeyes.man
 
 EXTRA_DIST = eyes.bit eyesmask.bit
