@@ -37,7 +37,7 @@ appman_SOURCES = \
 
 EXTRA_DIST = eyes.bit eyesmask.bit
 
-appmandir =  $(mandir)/man$(APP_MAN_SUFFIX)
+appmandir = $(APP_MAN_DIR)
 
 appman_DATA = $(appman_SOURCES:man=@APP_MAN_SUFFIX@)
 
