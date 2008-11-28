@@ -21,7 +21,7 @@
 
 bin_PROGRAMS = xeyes
 
-xeyes_CFLAGS = $(XEYES_CFLAGS)
+AM_CFLAGS = $(XEYES_CFLAGS)
 xeyes_LDADD = $(XEYES_LIBS) -lm
 
 xeyes_SOURCES =	\
