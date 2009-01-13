@@ -18,3 +18,7 @@ stamp-h1
 xeyes
 xeyes.1
 *~
+*.o
+xeyes-*.tar.*
+ChangeLog
+tags

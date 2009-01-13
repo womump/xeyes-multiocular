@@ -169,7 +169,7 @@ static void Initialize (
 						       &shape_error_base))
 	w->eyes.shape_window = False;
     w->eyes.shape_mask = 0;
-    w->eyes.shapeGC = 0;
+    w->eyes.shapeGC = NULL;
 }
 
 static void eyeLiner (

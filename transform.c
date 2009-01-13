@@ -83,13 +83,9 @@ TDrawArc (
 #endif
 
 void
-TFillArc (dpy, d, gc, t, x, y, width, height, angle1, angle2)
-    Display	*dpy;
-    Drawable	d;
-    GC		gc;
-    Transform	*t;
-    double	x, y, width, height;
-    int		angle1, angle2;
+TFillArc (Display *dpy, Drawable d, GC gc, Transform *t,
+	  double x, double y, double width, double height,
+	  int angle1, int angle2)
 {
 	int	xx, xy, xw, xh;
 
@@ -109,10 +105,9 @@ TFillArc (dpy, d, gc, t, x, y, width, height, angle1, angle2)
 }
 
 void
-SetTransform (t, xx1, xx2, xy1, xy2, tx1, tx2, ty1, ty2)
-    Transform	*t;
-    int		xx1, xx2, xy1, xy2;
-    double	tx1, tx2, ty1, ty2;
+SetTransform (Transform *t,
+	      int xx1, int xx2, int xy1, int xy2,
+	      double tx1, double tx2, double ty1, double ty2)
 {
 	t->mx = ((double) xx2 - xx1) / (tx2 - tx1);
 	t->bx = ((double) xx1) - t->mx * tx1;
