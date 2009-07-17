@@ -74,7 +74,6 @@ static XtResource resources[] = {
 #undef offset
 #undef goffset
 
-# define NUM_EYES	2
 # define EYE_X(n)	((n) * 2.0)
 # define EYE_Y(n)	(0.0)
 # define EYE_OFFSET	(0.1)	/* padding between eyes */
