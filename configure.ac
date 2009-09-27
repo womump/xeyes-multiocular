@@ -43,6 +43,15 @@ XEYES_CFLAGS="$CWARNFLAGS $XEYES_CFLAGS"
 AC_SUBST(XEYES_CFLAGS)
 AC_SUBST(XEYES_LIBS)
 
+dnl Optional dependencies
+AC_ARG_WITH(xrender, AC_HELP_STRING([--with-xrender],[Use Xrender for rendering (Default is YES)]),use_xrender="$withval",use_xrender="try")
+if test x$use_xrender != xno ; then
+	PKG_CHECK_MODULES(XRENDER, [xrender >= 0.4])
+	XEYES_CFLAGS="$XEYES_CFLAGS $XRENDER_CFLAGS"
+	XEYES_LIBS="$XEYES_LIBS $XRENDER_LIBS"
+	AC_DEFINE([XRENDER],1,[Define to use X Render Extension])
+fi
+
 XORG_MANPAGE_SECTIONS
 XORG_RELEASE_VERSION
 XORG_CHANGELOG

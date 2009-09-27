@@ -83,25 +83,20 @@ TDrawArc (
 #endif
 
 void
-TFillArc (Display *dpy, Drawable d, GC gc, Transform *t,
-	  double x, double y, double width, double height,
-	  int angle1, int angle2)
+Trectangle(const Transform *t, const TRectangle *i, TRectangle *o)
 {
-	int	xx, xy, xw, xh;
-
-	xx = Xx(x,y,t);
-	xy = Xy(x,y,t);
-	xw = Xwidth (width, height, t);
-	xh = Xheight (width, height, t);
-	if (xw < 0) {
-		xx += xw;
-		xw = -xw;
-	}
-	if (xh < 0) {
-		xy += xh;
-		xh = -xh;
-	}
-	XFillArc (dpy, d, gc, xx, xy, xw, xh, angle1, angle2);
+    o->x = t->mx * i->x + t->bx;
+    o->y = t->my * i->y + t->by;
+    o->width = t->mx * i->width;
+    o->height = t->my * i->height;
+    if (o->width < 0) {
+	o->x += o->width;
+	o->width = -o->width;
+    }
+    if (o->height < 0) {
+	o->y += o->height;
+	o->height = -o->height;
+    }
 }
 
 void

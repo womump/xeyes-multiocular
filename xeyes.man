@@ -44,7 +44,14 @@ choose a different width for the window border.
 uses the SHAPE extension to shape the window.  This is the default.
 .TP 8
 .B \+shape
-Disables uses the SHAPE extension to shape the window.
+disables use of the SHAPE extension to shape the window.
+.TP 8
+.B \-render
+uses Xrender to draw anti-aliased eyes.
+This is the default if \fIxeyes\fP has been compiled with Xrender support.
+.TP 8
+.B \+render
+disables Xrender and draws traditional eyes.
 .SH "SEE ALSO"
 X(__miscmansuffix__), X Toolkit documentation
 .br

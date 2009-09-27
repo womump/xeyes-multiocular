@@ -30,6 +30,10 @@ from the X Consortium.
 */
 /* $XFree86: xc/programs/xeyes/xeyes.c,v 1.3 2000/02/17 14:00:35 dawes Exp $ */
 
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
+
 #include <X11/Intrinsic.h>
 #include <X11/StringDefs.h>
 #include <X11/Shell.h>
@@ -54,6 +58,10 @@ usage(void)
     fprintf(stderr, "\n");
     fprintf(stderr,
 "       [-outline {color}] [-center {color}] [-backing {backing-store}]\n");
+#ifdef XRENDER
+    fprintf(stderr,
+"       [-render | +render]\n");
+#endif
     exit(1);
 }
 
@@ -66,6 +74,10 @@ static XrmOptionDescRec options[] = {
 {"-backing",	"*eyes.backingStore",	XrmoptionSepArg,	NULL},
 {"-shape",	"*eyes.shapeWindow",	XrmoptionNoArg,		"TRUE"},
 {"+shape",	"*eyes.shapeWindow",	XrmoptionNoArg,		"FALSE"},
+#ifdef XRENDER
+{"-render",	"*eyes.render",		XrmoptionNoArg,		"TRUE"},
+{"+render",	"*eyes.render",		XrmoptionNoArg,		"FALSE"},
+#endif
 };
 
 static Atom wm_delete_window;
