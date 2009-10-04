@@ -79,6 +79,8 @@ static XtResource resources[] = {
     {XtNrender, XtCBoolean, XtRBoolean, sizeof(Boolean),
 	offset(render), XtRImmediate, (XtPointer) TRUE },
 #endif
+    {XtNdistance, XtCBoolean, XtRBoolean, sizeof(Boolean),
+	offset(distance), XtRImmediate, (XtPointer) FALSE },
 };
 
 #undef offset
@@ -100,6 +102,8 @@ static XtResource resources[] = {
 # define TPOINT_NONE	(-1000)	/* special value meaning "not yet set" */
 # define TPointEqual(a, b)  ((a).x == (b).x && (a).y == (b).y)
 # define XPointEqual(a, b)  ((a).x == (b).x && (a).y == (b).y)
+# define AngleBetween(A, A0, A1) (A0 <= A1 ? A0 <= A && A <= A1 : \
+					     A0 <= A || A <= A1)
 
 static int delays[] = { 50, 100, 200, 400, 0 };
 
@@ -299,7 +303,8 @@ eyeLiner(EyesWidget	w,
 
 static TPoint computePupil (
     int		num,
-    TPoint	mouse)
+    TPoint	mouse,
+    const TRectangle *screen)
 {
 	double	cx, cy;
 	double	dist;
@@ -316,6 +321,42 @@ static TPoint computePupil (
 		cosa = cos (angle);
 		sina = sin (angle);
 		dist = BALL_DIST;
+		if (screen)
+		{
+		    /* use distance mapping */
+		    double x0, y0, x1, y1;
+		    double a[4];
+		    x0 = screen->x - cx;
+		    y0 = screen->y - cy;
+		    x1 = x0 + screen->width;
+		    y1 = y0 + screen->height;
+		    a[0] = atan2(y0, x0);
+		    a[1] = atan2(y1, x0);
+		    a[2] = atan2(y1, x1);
+		    a[3] = atan2(y0, x1);
+		    if (AngleBetween(angle, a[0], a[1]))
+		    {
+			/* left */
+			dist *= dx / x0;
+		    }
+		    else if (AngleBetween(angle, a[1], a[2]))
+		    {
+			/* bottom */
+			dist *= dy / y1;
+		    }
+		    else if (AngleBetween(angle, a[2], a[3]))
+		    {
+			/* right */
+			dist *= dx / x1;
+		    }
+		    else if (AngleBetween(angle, a[3], a[0]))
+		    {
+			/* top */
+			dist *= dy / y0;
+		    }
+		    if (dist > BALL_DIST)
+			dist = BALL_DIST;
+		}
 		if (dist > hypot ((double) dx, (double) dy)) {
 			cx += dx;
 			cy += dy;
@@ -330,11 +371,26 @@ static TPoint computePupil (
 }
 
 static void computePupils (
+    EyesWidget	w,
     TPoint	mouse,
     TPoint	pupils[2])
 {
-    pupils[0] = computePupil (0, mouse);
-    pupils[1] = computePupil (1, mouse);
+    TRectangle screen, *sp = NULL;
+    if (w->eyes.distance) {
+	Window r, cw;
+	int x, y;
+	r = RootWindowOfScreen(w->core.screen);
+	XTranslateCoordinates(XtDisplay(w), XtWindow(w), r, 0, 0, &x, &y, &cw);
+	screen.x = Tx(-x, -y, &w->eyes.t);
+	screen.y = Ty(-x, -y, &w->eyes.t);
+	screen.width  = Twidth (w->core.screen->width, w->core.screen->height,
+				&w->eyes.t);
+	screen.height = Theight(w->core.screen->width, w->core.screen->height,
+				&w->eyes.t);
+	sp = &screen;
+    }
+    pupils[0] = computePupil (0, mouse, sp);
+    pupils[1] = computePupil (1, mouse, sp);
 }
 
 static void
@@ -354,7 +410,7 @@ static void repaint_window (EyesWidget w)
 	if (XtIsRealized ((Widget) w)) {
 		eyeLiner (w, TRUE, 0);
 		eyeLiner (w, TRUE, 1);
-		computePupils (w->eyes.mouse, w->eyes.pupil);
+		computePupils (w, w->eyes.mouse, w->eyes.pupil);
 		eyeBall (w, TRUE, NULL, 0);
 		eyeBall (w, TRUE, NULL, 1);
 	}
@@ -391,7 +447,7 @@ drawEyes(EyesWidget w, TPoint mouse)
 	    ++w->eyes.update;
 	return;
     }
-    computePupils (mouse, newpupil);
+    computePupils (w, mouse, newpupil);
     for (num = 0; num < 2; num ++) {
 	drawEye(w, newpupil[num], num);
     }

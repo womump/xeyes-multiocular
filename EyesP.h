@@ -34,6 +34,7 @@ typedef struct {
 	 Picture	picture;
 	 Picture	fill[PART_SHAPE];
 #endif
+	 Boolean    	distance;
    } EyesPart;
 
 /* Full instance record declaration */

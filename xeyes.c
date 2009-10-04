@@ -57,7 +57,7 @@ usage(void)
     fprintf(stderr, " [-shape | +shape]");
     fprintf(stderr, "\n");
     fprintf(stderr,
-"       [-outline {color}] [-center {color}] [-backing {backing-store}]\n");
+"       [-outline {color}] [-center {color}] [-backing {backing-store}] [-distance]\n");
 #ifdef XRENDER
     fprintf(stderr,
 "       [-render | +render]\n");
@@ -78,6 +78,7 @@ static XrmOptionDescRec options[] = {
 {"-render",	"*eyes.render",		XrmoptionNoArg,		"TRUE"},
 {"+render",	"*eyes.render",		XrmoptionNoArg,		"FALSE"},
 #endif
+{"-distance",	"*eyes.distance",	XrmoptionNoArg,		"TRUE"},
 };
 
 static Atom wm_delete_window;

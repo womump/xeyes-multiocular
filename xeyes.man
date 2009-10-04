@@ -52,6 +52,9 @@ This is the default if \fIxeyes\fP has been compiled with Xrender support.
 .TP 8
 .B \+render
 disables Xrender and draws traditional eyes.
+.TP 8
+.B \-distance
+uses an alternative mapping, as if the eyes were set back from the screen, thus following the mouse more precisely.
 .SH "SEE ALSO"
 X(__miscmansuffix__), X Toolkit documentation
 .br

@@ -35,7 +35,8 @@
 #define XtNshapeWindow	"shapeWindow"
 #define XtCShapeWindow	"ShapeWindow"
 
-#define XtNrender "render"
+#define XtNrender	"render"
+#define XtNdistance	"distance"
 
 enum EyesPart {
 	PART_CLEAR = -1,
