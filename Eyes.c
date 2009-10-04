@@ -88,14 +88,10 @@ static XtResource resources[] = {
 # define EYE_Y(n)	(0.0)
 # define EYE_OFFSET	(0.1)	/* padding between eyes */
 # define EYE_THICK	(0.175)	/* thickness of eye rim */
-# define BALL_WIDTH	(0.3)
-# define BALL_PAD	(0.05)
-# define EYE_WIDTH	(2.0 - (EYE_THICK + EYE_OFFSET) * 2)
-# define EYE_HEIGHT	EYE_WIDTH
-# define EYE_HWIDTH	(EYE_WIDTH / 2.0)
-# define EYE_HHEIGHT	(EYE_HEIGHT / 2.0)
-# define BALL_HEIGHT	BALL_WIDTH
-# define BALL_DIST	((EYE_WIDTH - BALL_WIDTH) / 2.0 - BALL_PAD)
+# define BALL_DIAM	(0.3)
+# define BALL_PAD	(0.175)
+# define EYE_DIAM	(2.0 - (EYE_THICK + EYE_OFFSET) * 2)
+# define BALL_DIST	((EYE_DIAM - BALL_DIAM) / 2.0 - BALL_PAD)
 # define W_MIN_X	(-1.0 + EYE_OFFSET)
 # define W_MAX_X	(3.0 - EYE_OFFSET)
 # define W_MIN_Y	(-1.0 + EYE_OFFSET)
@@ -203,12 +199,14 @@ static void Initialize (
 
 static void
 drawEllipse(EyesWidget w, enum EyesPart part,
-	    double centerx, double centery, double width, double height)
+	    double centerx, double centery,
+	    double oldx, double oldy,
+	    double diam)
 {
     const TRectangle tpos = {
-	centerx - width/2.0,
-	centery - height/2.0,
-	width, height };
+	centerx - diam/2.0,
+	centery - diam/2.0,
+	diam, diam };
     TRectangle pos;
     Trectangle(&w->eyes.t, &tpos, &pos);
 
@@ -256,6 +254,10 @@ drawEllipse(EyesWidget w, enum EyesPart part,
 	    y = c*py + sy*px;
 	}
 
+	if (oldx != TPOINT_NONE || oldy != TPOINT_NONE)
+	    drawEllipse(w, PART_CLEAR, oldx, oldy,
+			TPOINT_NONE, TPOINT_NONE, diam);
+
 	XRenderCompositeDoublePoly(XtDisplay(w), PictOpOver,
 				   w->eyes.fill[part], w->eyes.picture,
 				   XRenderFindStandardFormat(XtDisplay(w),
@@ -266,6 +268,10 @@ drawEllipse(EyesWidget w, enum EyesPart part,
 	return;
     }
 #endif
+    if (oldx != TPOINT_NONE || oldy != TPOINT_NONE)
+	drawEllipse(w, PART_CLEAR, oldx, oldy,
+		    TPOINT_NONE, TPOINT_NONE, diam);
+
     XFillArc(XtDisplay(w),
 	     part == PART_SHAPE ? w->eyes.shape_mask : XtWindow(w),
 	     w->eyes.gc[part],
@@ -282,11 +288,12 @@ eyeLiner(EyesWidget	w,
 {
     drawEllipse(w, draw ? PART_OUTLINE : PART_SHAPE,
 		EYE_X(num), EYE_Y(num),
-		EYE_WIDTH + 2.0*EYE_THICK,
-		EYE_HEIGHT + 2.0*EYE_THICK);
+		TPOINT_NONE, TPOINT_NONE,
+		EYE_DIAM + 2.0*EYE_THICK);
     if (draw) {
 	drawEllipse(w, PART_CENTER, EYE_X(num), EYE_Y(num),
-		    EYE_WIDTH, EYE_HEIGHT);
+		    TPOINT_NONE, TPOINT_NONE,
+		    EYE_DIAM);
     }
 }
 
@@ -297,31 +304,24 @@ static TPoint computePupil (
 	double	cx, cy;
 	double	dist;
 	double	angle;
-	double	x, y;
-	double	h;
 	double	dx, dy;
 	double	cosa, sina;
 	TPoint	ret;
 
-	dx = mouse.x - EYE_X(num);
-	dy = mouse.y - EYE_Y(num);
-	if (dx == 0 && dy == 0) {
-		cx = EYE_X(num);
-		cy = EYE_Y(num);
-	} else {
+	cx = EYE_X(num); dx = mouse.x - cx;
+	cy = EYE_Y(num); dy = mouse.y - cy;
+	if (dx == 0 && dy == 0);
+	else {
 		angle = atan2 ((double) dy, (double) dx);
 		cosa = cos (angle);
 		sina = sin (angle);
-		h = hypot (EYE_HHEIGHT * cosa, EYE_HWIDTH * sina);
-		x = (EYE_HWIDTH * EYE_HHEIGHT) * cosa / h;
-		y = (EYE_HWIDTH * EYE_HHEIGHT) * sina / h;
-		dist = BALL_DIST * hypot (x, y);
+		dist = BALL_DIST;
 		if (dist > hypot ((double) dx, (double) dy)) {
-			cx = dx + EYE_X(num);
-			cy = dy + EYE_Y(num);
+			cx += dx;
+			cy += dy;
 		} else {
-			cx = dist * cosa + EYE_X(num);
-			cy = dist * sina + EYE_Y(num);
+			cx += dist * cosa;
+			cy += dist * sina;
 		}
 	}
 	ret.x = cx;
@@ -340,11 +340,13 @@ static void computePupils (
 static void
 eyeBall(EyesWidget	w,
 	Boolean draw,
+	TPoint	*old,
 	int	num)
 {
     drawEllipse(w, draw ? PART_PUPIL : PART_CLEAR,
 		w->eyes.pupil[num].x, w->eyes.pupil[num].y,
-		BALL_WIDTH, BALL_HEIGHT);
+		old ? old->x : TPOINT_NONE, old ? old->y : TPOINT_NONE,
+		BALL_DIAM);
 }
 
 static void repaint_window (EyesWidget w)
@@ -353,59 +355,49 @@ static void repaint_window (EyesWidget w)
 		eyeLiner (w, TRUE, 0);
 		eyeLiner (w, TRUE, 1);
 		computePupils (w->eyes.mouse, w->eyes.pupil);
-		eyeBall (w, TRUE, 0);
-		eyeBall (w, TRUE, 1);
+		eyeBall (w, TRUE, NULL, 0);
+		eyeBall (w, TRUE, NULL, 1);
 	}
 }
 
-static void draw_eye(EyesWidget w, TPoint mouse, int eye1, int eye2)
+static void
+drawEye(EyesWidget w, TPoint newpupil, int num)
 {
-    TPoint		newpupil[2];
     XPoint		xnewpupil, xpupil;
 
-    if (!TPointEqual (mouse, w->eyes.mouse)) {
-	computePupils (mouse, newpupil);
-	xpupil.x = Xx(w->eyes.pupil[0].x, w->eyes.pupil[0].y, &w->eyes.t);
-	xpupil.y = Xy(w->eyes.pupil[0].x, w->eyes.pupil[0].y, &w->eyes.t);
-	xnewpupil.x =  Xx(newpupil[0].x, newpupil[0].y, &w->eyes.t);
-	xnewpupil.y =  Xy(newpupil[0].x, newpupil[0].y, &w->eyes.t);
-	if (
+    xpupil.x = Xx(w->eyes.pupil[num].x, w->eyes.pupil[num].y, &w->eyes.t);
+    xpupil.y = Xy(w->eyes.pupil[num].x, w->eyes.pupil[num].y, &w->eyes.t);
+    xnewpupil.x = Xx(newpupil.x, newpupil.y, &w->eyes.t);
+    xnewpupil.y = Xy(newpupil.x, newpupil.y, &w->eyes.t);
+    if (
 #ifdef XRENDER
-	    w->eyes.picture ? !TPointEqual(w->eyes.pupil[0], newpupil[0]) :
+	w->eyes.picture ? !TPointEqual(w->eyes.pupil[num], newpupil) :
 #endif
-	    !XPointEqual (xpupil, xnewpupil)) {
-	    if (w->eyes.pupil[0].x != TPOINT_NONE ||
-		w->eyes.pupil[0].y != TPOINT_NONE)
-		eyeBall (w, FALSE, eye1);
-	    w->eyes.pupil[0] = newpupil[0];
-	    eyeBall (w, TRUE, eye1);
-	}
+	!XPointEqual(xpupil, xnewpupil)) {
+	TPoint oldpupil = w->eyes.pupil[num];
+	w->eyes.pupil[num] = newpupil;
+	eyeBall (w, TRUE, &oldpupil, num);
+    }
+}
 
-	w->eyes.mouse = mouse;
-	w->eyes.update = 0;
+static void
+drawEyes(EyesWidget w, TPoint mouse)
+{
+    TPoint		newpupil[2];
+    int			num;
 
-	if (eye1 == eye2)
-		return;
-
-	xpupil.x = Xx(w->eyes.pupil[1].x, w->eyes.pupil[1].y, &w->eyes.t);
-	xpupil.y = Xy(w->eyes.pupil[1].x, w->eyes.pupil[1].y, &w->eyes.t);
-	xnewpupil.x =  Xx(newpupil[1].x, newpupil[1].y, &w->eyes.t);
-	xnewpupil.y =  Xy(newpupil[1].x, newpupil[1].y, &w->eyes.t);
-	if (
-#ifdef XRENDER
-	    w->eyes.picture ? !TPointEqual(w->eyes.pupil[1], newpupil[1]) :
-#endif
-	    !XPointEqual (xpupil, xnewpupil)) {
-	    if (w->eyes.pupil[1].x != TPOINT_NONE ||
-		w->eyes.pupil[1].y != TPOINT_NONE)
-		eyeBall (w, FALSE, eye2);
-	    w->eyes.pupil[1] = newpupil[1];
-	    eyeBall (w, TRUE, eye2);
-	}
-    } else {
+    if (TPointEqual (mouse, w->eyes.mouse)) {
 	if (delays[w->eyes.update + 1] != 0)
 	    ++w->eyes.update;
+	return;
     }
+    computePupils (mouse, newpupil);
+    for (num = 0; num < 2; num ++) {
+	drawEye(w, newpupil[num], num);
+    }
+
+    w->eyes.mouse = mouse;
+    w->eyes.update = 0;
 }
 
 static void draw_it_core(EyesWidget w)
@@ -423,7 +415,7 @@ static void draw_it_core(EyesWidget w)
     mouse.x = Tx(dx, dy, &w->eyes.t);
     mouse.y = Ty(dx, dy, &w->eyes.t);
 
-    draw_eye(w, mouse, 0, 1);
+    drawEyes(w, mouse);
 }
 
 /* ARGSUSED */
