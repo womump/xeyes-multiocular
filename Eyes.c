@@ -137,7 +137,7 @@ static void Initialize (
      *     foreground - text, ticks	black
      *     border - border		black (foreground)
      *
-     * This doesn't completely work since the parent has already made up a 
+     * This doesn't completely work since the parent has already made up a
      * border.  Sigh.
      */
     if (w->eyes.reverse_video) {
@@ -367,9 +367,13 @@ static void draw_eye(EyesWidget w, TPoint mouse, int eye1, int eye2)
 	computePupils (mouse, newpupil);
 	xpupil.x = Xx(w->eyes.pupil[0].x, w->eyes.pupil[0].y, &w->eyes.t);
 	xpupil.y = Xy(w->eyes.pupil[0].x, w->eyes.pupil[0].y, &w->eyes.t);
-	xpupil.x =  Xx(newpupil[0].x, newpupil[0].y, &w->eyes.t);
-	xpupil.y =  Xy(newpupil[0].x, newpupil[0].y, &w->eyes.t);
-	if (!XPointEqual (xpupil, xnewpupil)) {
+	xnewpupil.x =  Xx(newpupil[0].x, newpupil[0].y, &w->eyes.t);
+	xnewpupil.y =  Xy(newpupil[0].x, newpupil[0].y, &w->eyes.t);
+	if (
+#ifdef XRENDER
+	    w->eyes.picture ? !TPointEqual(w->eyes.pupil[0], newpupil[0]) :
+#endif
+	    !XPointEqual (xpupil, xnewpupil)) {
 	    if (w->eyes.pupil[0].x != TPOINT_NONE ||
 		w->eyes.pupil[0].y != TPOINT_NONE)
 		eyeBall (w, FALSE, eye1);
@@ -383,12 +387,15 @@ static void draw_eye(EyesWidget w, TPoint mouse, int eye1, int eye2)
 	if (eye1 == eye2)
 		return;
 
-	computePupils (mouse, newpupil);
 	xpupil.x = Xx(w->eyes.pupil[1].x, w->eyes.pupil[1].y, &w->eyes.t);
 	xpupil.y = Xy(w->eyes.pupil[1].x, w->eyes.pupil[1].y, &w->eyes.t);
-	xpupil.x =  Xx(newpupil[1].x, newpupil[1].y, &w->eyes.t);
-	xpupil.y =  Xy(newpupil[1].x, newpupil[1].y, &w->eyes.t);
-	if (!XPointEqual (xpupil, xnewpupil)) {
+	xnewpupil.x =  Xx(newpupil[1].x, newpupil[1].y, &w->eyes.t);
+	xnewpupil.y =  Xy(newpupil[1].x, newpupil[1].y, &w->eyes.t);
+	if (
+#ifdef XRENDER
+	    w->eyes.picture ? !TPointEqual(w->eyes.pupil[1], newpupil[1]) :
+#endif
+	    !XPointEqual (xpupil, xnewpupil)) {
 	    if (w->eyes.pupil[1].x != TPOINT_NONE ||
 		w->eyes.pupil[1].y != TPOINT_NONE)
 		eyeBall (w, FALSE, eye2);
