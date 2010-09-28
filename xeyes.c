@@ -1,4 +1,3 @@
-/* $XConsortium: xeyes.c,v 1.16 94/04/17 20:45:23 rws Exp $ */
 /*
 
 Copyright (c) 1991  X Consortium
@@ -28,7 +27,6 @@ other dealings in this Software without prior written authorization
 from the X Consortium.
 
 */
-/* $XFree86: xc/programs/xeyes/xeyes.c,v 1.3 2000/02/17 14:00:35 dawes Exp $ */
 
 #ifdef HAVE_CONFIG_H
 # include "config.h"
