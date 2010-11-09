@@ -34,21 +34,13 @@ m4_ifndef([XORG_MACROS_VERSION],
 XORG_MACROS_VERSION(1.8)
 XORG_DEFAULT_OPTIONS
 
-AC_PROG_CC
-AC_PROG_INSTALL
-
-
 # Checks for pkg-config packages
 PKG_CHECK_MODULES(XEYES, x11 xt xext xmu)
-AC_SUBST(XEYES_CFLAGS)
-AC_SUBST(XEYES_LIBS)
 
 dnl Optional dependencies
 AC_ARG_WITH(xrender, AC_HELP_STRING([--with-xrender],[Use Xrender for rendering (Default is YES)]),use_xrender="$withval",use_xrender="try")
 if test x$use_xrender != xno ; then
 	PKG_CHECK_MODULES(XRENDER, [xrender >= 0.4])
-	XEYES_CFLAGS="$XEYES_CFLAGS $XRENDER_CFLAGS"
-	XEYES_LIBS="$XEYES_LIBS $XRENDER_LIBS"
 	AC_DEFINE([XRENDER],1,[Define to use X Render Extension])
 fi
 

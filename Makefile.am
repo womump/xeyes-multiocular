@@ -21,8 +21,8 @@
 
 bin_PROGRAMS = xeyes
 
-AM_CFLAGS = $(XEYES_CFLAGS) $(CWARNFLAGS)
-xeyes_LDADD = $(XEYES_LIBS) -lm
+AM_CFLAGS = $(XEYES_CFLAGS) $(XRENDER_CFLAGS) $(CWARNFLAGS)
+xeyes_LDADD = $(XEYES_LIBS) $(XRENDER_LIBS) -lm
 
 xeyes_SOURCES =	\
         Eyes.c \
