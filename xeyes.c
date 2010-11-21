@@ -36,8 +36,8 @@ from the X Consortium.
 #include <X11/StringDefs.h>
 #include <X11/Shell.h>
 #include "Eyes.h"
-#include <stdio.h> 
-#include <stdlib.h> 
+#include <stdio.h>
+#include <stdlib.h>
 #include "eyes.bit"
 #include "eyesmask.bit"
 
@@ -48,7 +48,7 @@ usage(void)
 {
     fprintf(stderr,
 "usage: xeyes\n");
-    fprintf (stderr, 
+    fprintf (stderr,
 "       [-geometry [{width}][x{height}][{+-}{xoff}[{+-}{yoff}]]] [-display [{host}]:[{vs}]]\n");
     fprintf(stderr,
 "       [-fg {color}] [-bg {color}] [-bd {color}] [-bw {pixels}]");
@@ -85,7 +85,7 @@ static Atom wm_delete_window;
 static void
 quit(Widget w, XEvent *event, String *params, Cardinal *num_params)
 {
-    if (event->type == ClientMessage && 
+    if (event->type == ClientMessage &&
 	event->xclient.data.l[0] != wm_delete_window) {
 	XBell(XtDisplay(w), 0);
     } else {
@@ -105,10 +105,10 @@ main(int argc, char **argv)
     Widget toplevel;
     Arg arg[2];
     Cardinal i;
-    
+
     XtSetLanguageProc(NULL, (XtLanguageProc) NULL, NULL);
 
-    toplevel = XtAppInitialize(&app_context, "XEyes", 
+    toplevel = XtAppInitialize(&app_context, "XEyes",
 			       options, XtNumber(options), &argc, argv,
 			       NULL, arg, (Cardinal) 0);
     if (argc != 1) usage();
@@ -118,14 +118,14 @@ main(int argc, char **argv)
     XtAppAddActions(app_context, actions, XtNumber(actions));
     XtOverrideTranslations
 	(toplevel, XtParseTranslationTable ("<Message>WM_PROTOCOLS: quit()"));
-    
+
     i = 0;
-    XtSetArg (arg[i], XtNiconPixmap, 
+    XtSetArg (arg[i], XtNiconPixmap,
 	      XCreateBitmapFromData (XtDisplay(toplevel),
 				     XtScreen(toplevel)->root,
 				     (char *)eyes_bits, eyes_width, eyes_height));
     i++;
-    XtSetArg (arg[i], XtNiconMask, 
+    XtSetArg (arg[i], XtNiconMask,
 	      XCreateBitmapFromData (XtDisplay(toplevel),
 				     XtScreen(toplevel)->root,
 				     (char *)eyesmask_bits,
