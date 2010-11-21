@@ -47,18 +47,15 @@ static void
 usage(void)
 {
     fprintf(stderr,
-"usage: xeyes\n");
-    fprintf (stderr,
-"       [-geometry [{width}][x{height}][{+-}{xoff}[{+-}{yoff}]]] [-display [{host}]:[{vs}]]\n");
-    fprintf(stderr,
-"       [-fg {color}] [-bg {color}] [-bd {color}] [-bw {pixels}]");
-    fprintf(stderr, " [-shape | +shape]");
-    fprintf(stderr, "\n");
-    fprintf(stderr,
-"       [-outline {color}] [-center {color}] [-backing {backing-store}] [-distance]\n");
+	    "usage: xeyes\n"
+	    "       [-display [{host}]:[{vs}]]\n"
+	    "       [-geometry [{width}][x{height}][{+-}{xoff}[{+-}{yoff}]]]\n"
+	    "       [-fg {color}] [-bg {color}] [-bd {color}] [-bw {pixels}]\n"
+	    "       [-shape | +shape] [-outline {color}] [-center {color}]\n"
+	    "       [-backing {backing-store}] [-distance]\n");
 #ifdef XRENDER
     fprintf(stderr,
-"       [-render | +render]\n");
+	    "       [-render | +render]\n");
 #endif
     exit(1);
 }
