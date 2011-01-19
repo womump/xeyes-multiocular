@@ -48,4 +48,7 @@ if test x$use_xrender != xno ; then
 	AC_DEFINE([XRENDER],1,[Define to use X Render Extension])
 fi
 
-AC_OUTPUT([Makefile])
+AC_CONFIG_FILES([
+	Makefile
+	man/Makefile])
+AC_OUTPUT
