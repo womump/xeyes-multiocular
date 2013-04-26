@@ -39,7 +39,7 @@ XORG_MACROS_VERSION(1.8)
 XORG_DEFAULT_OPTIONS
 
 # Checks for pkg-config packages
-PKG_CHECK_MODULES(XEYES, x11 xt xext xmu)
+PKG_CHECK_MODULES(XEYES, [x11 xt xext xmu xproto >= 7.0.17])
 
 dnl Optional dependencies
 AC_ARG_WITH(xrender, AS_HELP_STRING([--with-xrender],[Use Xrender for rendering (Default is YES)]),use_xrender="$withval",use_xrender="try")
