@@ -57,6 +57,10 @@ usage(void)
     fprintf(stderr,
 	    "       [-render | +render]\n");
 #endif
+#ifdef PRESENT
+    fprintf(stderr,
+	    "       [-present | +present]\n");
+#endif
     exit(1);
 }
 
@@ -72,6 +76,10 @@ static XrmOptionDescRec options[] = {
 #ifdef XRENDER
 {"-render",	"*eyes.render",		XrmoptionNoArg,		"TRUE"},
 {"+render",	"*eyes.render",		XrmoptionNoArg,		"FALSE"},
+#endif
+#ifdef PRESENT
+{"-present",	"*eyes.present",	XrmoptionNoArg,		"TRUE"},
+{"+present",	"*eyes.present",	XrmoptionNoArg,		"FALSE"},
 #endif
 {"-distance",	"*eyes.distance",	XrmoptionNoArg,		"TRUE"},
 };

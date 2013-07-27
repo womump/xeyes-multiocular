@@ -63,6 +63,9 @@ static XtResource resources[] = {
 	goffset(height), XtRImmediate, (XtPointer) 100},
     {XtNforeground, XtCForeground, XtRPixel, sizeof(Pixel),
         offset(pixel[PART_PUPIL]), XtRString, XtDefaultForeground},
+    {XtNbackgroundPixmap, XtCPixmap, XtRPixmap, sizeof(Pixmap),
+     XtOffsetOf(CoreRec,core.background_pixmap),
+     XtRImmediate, (XtPointer)None},
     {XtNoutline, XtCForeground, XtRPixel, sizeof(Pixel),
         offset(pixel[PART_OUTLINE]), XtRString, XtDefaultForeground},
     {XtNcenterColor, XtCBackground, XtRPixel, sizeof (Pixel),
@@ -76,6 +79,10 @@ static XtResource resources[] = {
 #ifdef XRENDER
     {XtNrender, XtCBoolean, XtRBoolean, sizeof(Boolean),
 	offset(render), XtRImmediate, (XtPointer) TRUE },
+#endif
+#ifdef PRESENT
+    {XtNpresent, XtCBoolean, XtRBoolean, sizeof(Boolean),
+     offset(present), XtRImmediate, (XtPointer) TRUE },
 #endif
     {XtNdistance, XtCBoolean, XtRBoolean, sizeof(Boolean),
 	offset(distance), XtRImmediate, (XtPointer) FALSE },
@@ -112,6 +119,129 @@ static void ClassInitialize(void)
 }
 
 WidgetClass eyesWidgetClass = (WidgetClass) &eyesClassRec;
+
+#ifdef PRESENT
+static void CheckPresent(EyesWidget w) {
+    const xcb_query_extension_reply_t 	    *xfixes_ext_reply;
+    const xcb_query_extension_reply_t 	    *damage_ext_reply;
+    const xcb_query_extension_reply_t 	    *present_ext_reply;
+    xcb_xfixes_query_version_cookie_t       xfixes_cookie;
+    xcb_xfixes_query_version_reply_t        *xfixes_reply;
+    xcb_damage_query_version_cookie_t       damage_cookie;
+    xcb_damage_query_version_reply_t        *damage_reply;
+    xcb_present_query_version_cookie_t      present_cookie;
+    xcb_present_query_version_reply_t       *present_reply;
+
+    if (!w->eyes.present)
+	return;
+
+    xcb_prefetch_extension_data(xt_xcb(w), &xcb_xfixes_id);
+    xcb_prefetch_extension_data(xt_xcb(w), &xcb_damage_id);
+    xcb_prefetch_extension_data(xt_xcb(w), &xcb_present_id);
+
+    xfixes_ext_reply = xcb_get_extension_data(xt_xcb(w), &xcb_xfixes_id);
+    damage_ext_reply = xcb_get_extension_data(xt_xcb(w), &xcb_damage_id);
+    present_ext_reply = xcb_get_extension_data(xt_xcb(w), &xcb_present_id);
+    if (xfixes_ext_reply == NULL || !xfixes_ext_reply->present
+	|| damage_ext_reply == NULL || !damage_ext_reply->present
+	|| present_ext_reply == NULL || !present_ext_reply->present)
+    {
+	w->eyes.present = FALSE;
+    }
+
+    if (!w->eyes.present)
+	return;
+
+    /* Now tell the server which versions of the extensions we support */
+    xfixes_cookie = xcb_xfixes_query_version(xt_xcb(w),
+					     XCB_XFIXES_MAJOR_VERSION,
+					     XCB_XFIXES_MINOR_VERSION);
+
+    damage_cookie = xcb_damage_query_version(xt_xcb(w),
+					     XCB_DAMAGE_MAJOR_VERSION,
+					     XCB_DAMAGE_MINOR_VERSION);
+
+    present_cookie = xcb_present_query_version(xt_xcb(w),
+					       XCB_PRESENT_MAJOR_VERSION,
+					       XCB_PRESENT_MINOR_VERSION);
+
+    xfixes_reply = xcb_xfixes_query_version_reply(xt_xcb(w),
+						  xfixes_cookie,
+						  NULL);
+    free(xfixes_reply);
+
+    damage_reply = xcb_damage_query_version_reply(xt_xcb(w),
+						  damage_cookie,
+						  NULL);
+    free(damage_reply);
+
+    present_reply = xcb_present_query_version_reply(xt_xcb(w),
+						    present_cookie,
+						    NULL);
+    free(present_reply);
+}
+
+static void MakePresentData(EyesWidget w) {
+    xcb_generic_event_t    *ev;
+
+    if (!w->eyes.present)
+        return;
+
+    if (!w->eyes.back_buffer) {
+        xcb_create_pixmap(xt_xcb(w),
+                          w->core.depth,
+                          w->eyes.back_buffer = xcb_generate_id(xt_xcb(w)),
+                          XtWindow(w),
+                          w->core.width,
+                          w->core.height);
+    }
+    if (!w->eyes.back_damage) {
+        xcb_damage_create(xt_xcb(w),
+                          w->eyes.back_damage = xcb_generate_id(xt_xcb(w)),
+                          w->eyes.back_buffer,
+                          XCB_DAMAGE_REPORT_LEVEL_NON_EMPTY);
+        xcb_xfixes_create_region(xt_xcb(w),
+                                 w->eyes.back_region = xcb_generate_id(xt_xcb(w)),
+                                 0, NULL);
+    }
+}
+
+static void UpdatePresent(EyesWidget w) {
+    if (w->eyes.back_buffer) {
+        xcb_damage_subtract(xt_xcb(w),
+                            w->eyes.back_damage,
+                            None,
+                            w->eyes.back_region);
+        xcb_present_pixmap(xt_xcb(w),
+                           XtWindow(w),
+                           w->eyes.back_buffer,
+                           0,
+                           None,
+                           w->eyes.back_region,
+                           0, 0,
+                           None,
+			   None,
+			   None,
+			   0,
+			   0, 1, 0,
+			   0, NULL);
+    }
+}
+
+#endif
+
+#ifdef PRESENT
+#define EyesDrawable(w) (w->eyes.back_buffer ? w->eyes.back_buffer : XtWindow(w))
+#else
+#define EyesDrawable(w) XtWindow(w)
+#endif
+
+static void draw_it_core(EyesWidget w);
+
+static void EyesGeneric(Widget w, XtPointer closure, XEvent *event, Boolean *continue_to_dispatch)
+{
+        draw_it_core((EyesWidget) w);
+}
 
 /* ARGSUSED */
 static void Initialize (
@@ -197,6 +327,11 @@ static void Initialize (
 	w->eyes.fill[i] = XRenderCreateSolidFill(XtDisplay (w), &rc);
     }
 #endif
+#ifdef PRESENT
+    w->eyes.back_buffer = None;
+    w->eyes.back_damage = None;
+    CheckPresent(w);
+#endif
 }
 
 static void
@@ -213,7 +348,7 @@ drawEllipse(EyesWidget w, enum EyesPart part,
     Trectangle(&w->eyes.t, &tpos, &pos);
 
     if (part == PART_CLEAR) {
-	XFillRectangle(XtDisplay(w), XtWindow(w),
+	XFillRectangle(XtDisplay(w), EyesDrawable(w),
 		       w->eyes.gc[PART_CENTER],
 		       (int)pos.x, (int)pos.y,
 		       (int)pos.width+2, (int)pos.height+2);
@@ -275,7 +410,7 @@ drawEllipse(EyesWidget w, enum EyesPart part,
 		    TPOINT_NONE, TPOINT_NONE, diam);
 
     XFillArc(XtDisplay(w),
-	     part == PART_SHAPE ? w->eyes.shape_mask : XtWindow(w),
+	     part == PART_SHAPE ? w->eyes.shape_mask : EyesDrawable(w),
 	     w->eyes.gc[part],
 	     (int)(pos.x + 0.5), (int)(pos.y + 0.5),
 	     (int)(pos.width + 0.0), (int)(pos.height + 0.0),
@@ -406,11 +541,17 @@ eyeBall(EyesWidget	w,
 static void repaint_window (EyesWidget w)
 {
 	if (XtIsRealized ((Widget) w)) {
+#ifdef PRESENT
+                MakePresentData(w);
+#endif
 		eyeLiner (w, TRUE, 0);
 		eyeLiner (w, TRUE, 1);
 		computePupils (w, w->eyes.mouse, w->eyes.pupil);
 		eyeBall (w, TRUE, NULL, 0);
 		eyeBall (w, TRUE, NULL, 1);
+#ifdef PRESENT
+                UpdatePresent(w);
+#endif
 	}
 }
 
@@ -440,6 +581,9 @@ drawEyes(EyesWidget w, TPoint mouse)
     TPoint		newpupil[2];
     int			num;
 
+#ifdef PRESENT
+    MakePresentData(w);
+#endif
     if (TPointEqual (mouse, w->eyes.mouse)) {
 	if (delays[w->eyes.update + 1] != 0)
 	    ++w->eyes.update;
@@ -452,6 +596,9 @@ drawEyes(EyesWidget w, TPoint mouse)
 
     w->eyes.mouse = mouse;
     w->eyes.update = 0;
+#ifdef PRESENT
+    UpdatePresent(w);
+#endif
 }
 
 static void draw_it_core(EyesWidget w)
@@ -497,12 +644,25 @@ static void Resize (Widget gw)
 
     if (XtIsRealized (gw))
     {
-	XClearWindow (dpy, XtWindow (w));
     	SetTransform (&w->eyes.t,
 		    	0, w->core.width,
  		    	w->core.height, 0,
 		    	W_MIN_X, W_MAX_X,
 		    	W_MIN_Y, W_MAX_Y);
+#ifdef PRESENT
+        if (w->eyes.back_buffer) {
+                xcb_free_pixmap(xt_xcb(w),
+                                w->eyes.back_buffer);
+                w->eyes.back_buffer = None;
+                xcb_damage_destroy(xt_xcb(w),
+                                   w->eyes.back_damage);
+                w->eyes.back_damage = None;
+        }
+        MakePresentData(w);
+#endif
+        if (EyesDrawable(w) == XtWindow(w))
+                XClearWindow (dpy, XtWindow (w));
+
 #ifdef XRENDER
 	if (w->eyes.picture) {
 	    XRenderFreePicture(dpy, w->eyes.picture);
@@ -537,7 +697,7 @@ static void Resize (Widget gw)
 	    pf = XRenderFindVisualFormat(dpy,
 					 DefaultVisualOfScreen(w->core.screen));
 	    if (pf)
-		w->eyes.picture = XRenderCreatePicture(dpy, XtWindow (w),
+		w->eyes.picture = XRenderCreatePicture(dpy, EyesDrawable (w),
 						       pf, 0, &pa);
 	}
 #endif

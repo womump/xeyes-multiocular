@@ -47,6 +47,12 @@ if test x$use_xrender != xno ; then
 	AC_DEFINE([XRENDER],1,[Define to use X Render Extension])
 fi
 
+AC_ARG_WITH(present, AS_HELP_STRING([--with-present],[Use Present for updates (Default is AUTO)]),use_present="$withval",use_present="try")
+if test x$use_present != xno ; then
+	PKG_CHECK_MODULES(PRESENT, [x11-xcb xcb-present >= 1.9 xcb-xfixes xcb-damage])
+	AC_DEFINE([PRESENT],1,[Define to use X Present Extension])
+fi
+
 AC_CONFIG_FILES([
 	Makefile
 	man/Makefile])

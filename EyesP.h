@@ -8,6 +8,13 @@
 #include <X11/extensions/Xrender.h>
 #endif
 #include "transform.h"
+#ifdef PRESENT
+#include <X11/Xlib-xcb.h>
+#include <xcb/xcb.h>
+#include <xcb/present.h>
+#include <xcb/xfixes.h>
+#include <xcb/damage.h>
+#endif
 
 #define SEG_BUFF_SIZE		128
 
@@ -31,8 +38,16 @@ typedef struct {
 	 Picture	picture;
 	 Picture	fill[PART_SHAPE];
 #endif
+#ifdef PRESENT
+         Pixmap         back_buffer;
+         xcb_damage_damage_t back_damage;
+         xcb_xfixes_region_t back_region;
+         Boolean        present;
+#endif
 	 Boolean    	distance;
    } EyesPart;
+
+#define xt_xcb(w)       (XGetXCBConnection(XtDisplay(w)))
 
 /* Full instance record declaration */
 typedef struct _EyesRec {
