@@ -48,6 +48,7 @@ from the X Consortium.
 # include <X11/extensions/shape.h>
 # include <X11/Xlibint.h>
 # include <stdlib.h>
+# include <X11/extensions/XInput2.h>
 
 #if (defined(SVR4) || defined(SYSV) && defined(i386))
 extern double hypot(double, double);
@@ -243,6 +244,97 @@ static void EyesGeneric(Widget w, XtPointer closure, XEvent *event, Boolean *con
         draw_it_core((EyesWidget) w);
 }
 
+struct root_listen_list {
+    struct root_listen_list *next;
+    Widget      widget;
+};
+
+static struct root_listen_list *root_listen_list;
+
+static Boolean xi2_dispatcher(XEvent *event) {
+    struct root_listen_list *rll;
+    Boolean was_dispatched = False;
+
+    for (rll = root_listen_list; rll; rll = rll->next) {
+        if (XtDisplay(rll->widget) == event->xany.display) {
+            XtDispatchEventToWidget(rll->widget, event);
+            was_dispatched = True;
+        }
+    }
+    return was_dispatched;
+}
+
+static void select_xi2_events(Widget w)
+{
+    XIEventMask evmasks[1];
+    unsigned char mask1[(XI_LASTEVENT + 7)/8];
+    unsigned char mask2[(XI_LASTEVENT + 7)/8];
+
+    memset(mask1, 0, sizeof(mask1));
+
+    /* select for button and key events from all master devices */
+    XISetMask(mask1, XI_RawMotion);
+
+    evmasks[0].deviceid = XIAllMasterDevices;
+    evmasks[0].mask_len = sizeof(mask1);
+    evmasks[0].mask = mask1;
+
+    XISelectEvents(XtDisplay(w),
+                   RootWindowOfScreen(XtScreen(w)),
+                   evmasks, 1);
+    XtSetEventDispatcher(XtDisplay(w),
+                         GenericEvent,
+                         xi2_dispatcher);
+}
+
+static Boolean xi2_add_root_listener(Widget widget)
+{
+    struct root_listen_list *rll = malloc (sizeof (struct root_listen_list));
+
+    if (!rll)
+        return False;
+    rll->widget = widget;
+    rll->next = root_listen_list;
+    if (!root_listen_list)
+            select_xi2_events(widget);
+    root_listen_list = rll;
+    XtInsertEventTypeHandler(widget, GenericEvent, NULL, EyesGeneric, NULL, XtListHead);
+    return True;
+}
+
+static void xi2_remove_root_listener(Widget widget)
+{
+    struct root_listen_list *rll, **prev;
+
+    for (prev = &root_listen_list; (rll = *prev) != NULL; prev = &rll->next) {
+        if (rll->widget == widget) {
+            *prev = rll->next;
+            free(rll);
+            break;
+        }
+    }
+}
+
+/* Return 1 if XI2 is available, 0 otherwise */
+static int has_xi2(Display *dpy)
+{
+    int major, minor;
+    int rc;
+
+    /* We need at least XI 2.0 */
+    major = 2;
+    minor = 0;
+
+    rc = XIQueryVersion(dpy, &major, &minor);
+    if (rc == BadRequest) {
+	return 0;
+    } else if (rc != Success) {
+        return 0;
+    }
+    return 1;
+}
+
+
 /* ARGSUSED */
 static void Initialize (
     Widget greq,
@@ -311,6 +403,8 @@ static void Initialize (
 	w->eyes.shape_window = False;
     w->eyes.shape_mask = 0;
     w->eyes.gc[PART_SHAPE] = NULL;
+
+    w->eyes.has_xi2 = has_xi2(XtDisplay(w));
 
 #ifdef XRENDER
     for (i = 0; i < PART_SHAPE; i ++) {
@@ -629,9 +723,11 @@ static void draw_it (
 	if (XtIsRealized((Widget)w)) {
 	        draw_it_core(w);
 	}
-	w->eyes.interval_id =
-		XtAppAddTimeOut(XtWidgetToApplicationContext((Widget) w),
-				delays[w->eyes.update], draw_it, (XtPointer)w);
+        if (!w->eyes.has_xi2) {
+                w->eyes.interval_id =
+                        XtAppAddTimeOut(XtWidgetToApplicationContext((Widget) w),
+                                        delays[w->eyes.update], draw_it, (XtPointer)w);
+        }
 } /* draw_it */
 
 static void Resize (Widget gw)
@@ -718,9 +814,13 @@ static void Realize (
     XtCreateWindow( gw, (unsigned)InputOutput, (Visual *)CopyFromParent,
 		     *valueMask, attrs );
     Resize (gw);
-    w->eyes.interval_id =
-	XtAppAddTimeOut(XtWidgetToApplicationContext(gw),
-			delays[w->eyes.update], draw_it, (XtPointer)gw);
+
+    if (w->eyes.has_xi2)
+            xi2_add_root_listener(gw);
+    else
+            w->eyes.interval_id =
+                    XtAppAddTimeOut(XtWidgetToApplicationContext(gw),
+                                    delays[w->eyes.update], draw_it, (XtPointer)gw);
 }
 
 static void Destroy (Widget gw)
@@ -732,6 +832,7 @@ static void Destroy (Widget gw)
 	XtRemoveTimeOut (w->eyes.interval_id);
      for (i = 0; i < PART_MAX; i ++)
 	     XtReleaseGC(gw, w->eyes.gc[i]);
+     xi2_remove_root_listener(gw);
 #ifdef XRENDER
      if (w->eyes.picture)
 	     XRenderFreePicture (XtDisplay(w), w->eyes.picture);

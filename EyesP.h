@@ -33,6 +33,7 @@ typedef struct {
 	 Transform	maskt;
 	 XtIntervalId	interval_id;
 	 Pixmap		shape_mask;	/* window shape */
+         Boolean        has_xi2;
 #ifdef XRENDER
 	 Boolean    	render;
 	 Picture	picture;
