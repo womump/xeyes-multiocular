@@ -58,34 +58,34 @@ extern double hypot(double, double);
 #define goffset(field) XtOffsetOf(WidgetRec, core.field)
 
 static XtResource resources[] = {
-    {XtNwidth, XtCWidth, XtRDimension, sizeof(Dimension),
+    {(char *) XtNwidth, (char *) XtCWidth, XtRDimension, sizeof(Dimension),
 	goffset(width), XtRImmediate, (XtPointer) 150},
-    {XtNheight, XtCHeight, XtRDimension, sizeof(Dimension),
+    {(char *) XtNheight, (char *) XtCHeight, XtRDimension, sizeof(Dimension),
 	goffset(height), XtRImmediate, (XtPointer) 100},
-    {XtNforeground, XtCForeground, XtRPixel, sizeof(Pixel),
-        offset(pixel[PART_PUPIL]), XtRString, XtDefaultForeground},
-    {XtNbackgroundPixmap, XtCPixmap, XtRPixmap, sizeof(Pixmap),
+    {(char *) XtNforeground, (char *) XtCForeground, XtRPixel, sizeof(Pixel),
+        offset(pixel[PART_PUPIL]), XtRString, (char *) XtDefaultForeground},
+    {(char *) XtNbackgroundPixmap, (char *) XtCPixmap, XtRPixmap, sizeof(Pixmap),
      XtOffsetOf(CoreRec,core.background_pixmap),
      XtRImmediate, (XtPointer)None},
-    {XtNoutline, XtCForeground, XtRPixel, sizeof(Pixel),
-        offset(pixel[PART_OUTLINE]), XtRString, XtDefaultForeground},
-    {XtNcenterColor, XtCBackground, XtRPixel, sizeof (Pixel),
-	offset(pixel[PART_CENTER]), XtRString, XtDefaultBackground},
-    {XtNreverseVideo, XtCReverseVideo, XtRBoolean, sizeof (Boolean),
+    {(char *) XtNoutline, (char *) XtCForeground, XtRPixel, sizeof(Pixel),
+        offset(pixel[PART_OUTLINE]), XtRString, (char *) XtDefaultForeground},
+    {(char *) XtNcenterColor, (char *) XtCBackground, XtRPixel, sizeof (Pixel),
+	offset(pixel[PART_CENTER]), XtRString, (char *) XtDefaultBackground},
+    {(char *) XtNreverseVideo, (char *) XtCReverseVideo, XtRBoolean, sizeof (Boolean),
 	offset (reverse_video), XtRImmediate, (XtPointer) FALSE},
-    {XtNbackingStore, XtCBackingStore, XtRBackingStore, sizeof (int),
-    	offset (backing_store), XtRString, "default"},
-    {XtNshapeWindow, XtCShapeWindow, XtRBoolean, sizeof (Boolean),
+    {(char *) XtNbackingStore, (char *) XtCBackingStore, (char *) XtRBackingStore, sizeof (int),
+    	offset (backing_store), XtRString, (char *) "default"},
+    {(char *) XtNshapeWindow, (char *) XtCShapeWindow, XtRBoolean, sizeof (Boolean),
 	offset (shape_window), XtRImmediate, (XtPointer) TRUE},
 #ifdef XRENDER
-    {XtNrender, XtCBoolean, XtRBoolean, sizeof(Boolean),
+    {(char *) XtNrender, (char *) XtCBoolean, XtRBoolean, sizeof(Boolean),
 	offset(render), XtRImmediate, (XtPointer) TRUE },
 #endif
 #ifdef PRESENT
-    {XtNpresent, XtCBoolean, XtRBoolean, sizeof(Boolean),
+    {(char *) XtNpresent, (char *) XtCBoolean, XtRBoolean, sizeof(Boolean),
      offset(present), XtRImmediate, (XtPointer) TRUE },
 #endif
-    {XtNdistance, XtCBoolean, XtRBoolean, sizeof(Boolean),
+    {(char *) XtNdistance, (char *) XtCBoolean, XtRBoolean, sizeof(Boolean),
 	offset(distance), XtRImmediate, (XtPointer) FALSE },
 };
 
@@ -183,7 +183,6 @@ static void CheckPresent(EyesWidget w) {
 }
 
 static void MakePresentData(EyesWidget w) {
-    xcb_generic_event_t    *ev;
 
     if (!w->eyes.present)
         return;
@@ -268,7 +267,6 @@ static void select_xi2_events(Widget w)
 {
     XIEventMask evmasks[1];
     unsigned char mask1[(XI_LASTEVENT + 7)/8];
-    unsigned char mask2[(XI_LASTEVENT + 7)/8];
 
     memset(mask1, 0, sizeof(mask1));
 
@@ -869,7 +867,7 @@ static Boolean SetValues (
 EyesClassRec eyesClassRec = {
     { /* core fields */
     /* superclass		*/	&widgetClassRec,
-    /* class_name		*/	"Eyes",
+    /* class_name		*/	(char *) "Eyes",
     /* size			*/	sizeof(EyesRec),
     /* class_initialize		*/	ClassInitialize,
     /* class_part_initialize	*/	NULL,
