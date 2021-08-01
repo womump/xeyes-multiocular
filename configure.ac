@@ -23,7 +23,7 @@ dnl Process this file with autoconf to create configure.
 
 # Initialize Autoconf
 AC_PREREQ([2.60])
-AC_INIT([xeyes], [1.1.2],
+AC_INIT([xeyes], [1.2.0],
         [https://gitlab.freedesktop.org/xorg/app/xeyes/issues], [xeyes])
 AC_CONFIG_SRCDIR([Makefile.am])
 AC_CONFIG_HEADERS([config.h])
