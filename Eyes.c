@@ -50,10 +50,6 @@ from the X Consortium.
 # include <stdlib.h>
 # include <X11/extensions/XInput2.h>
 
-#if (defined(SVR4) || defined(SYSV) && defined(i386))
-extern double hypot(double, double);
-#endif
-
 #define offset(field) XtOffsetOf(EyesRec, eyes.field)
 #define goffset(field) XtOffsetOf(WidgetRec, core.field)
 
