@@ -53,8 +53,6 @@ disables Xrender and draws traditional eyes.
 uses an alternative mapping, as if the eyes were set back from the screen, thus following the mouse more precisely.
 .SH "SEE ALSO"
 X(__miscmansuffix__), X Toolkit documentation
-.br
-See \fIX(__miscmansuffix__)\fP for a full statement of rights and permissions.
 .SH AUTHOR
 Keith Packard, MIT X Consortium
 .br
