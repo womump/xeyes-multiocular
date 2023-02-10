@@ -131,8 +131,17 @@ main(int argc, char **argv)
     toplevel = XtAppInitialize(&app_context, "XEyes",
 			       options, XtNumber(options), &argc, argv,
 			       NULL, arg, (Cardinal) 0);
-    if (argc != 1)
+
+    if (argc != 1) {
+	fputs("Unknown argument(s):", stderr);
+	for (int n = 1; n < argc; n++) {
+	    if ((n < (argc -1)) || (argv[n][0] == '-')) {
+		fprintf(stderr, " %s", argv[n]);
+	    }
+	}
+	fputs("\n\n", stderr);
 	usage(1);
+    }
 
     wm_delete_window = XInternAtom(XtDisplay(toplevel), "WM_DELETE_WINDOW",
 				   False);
