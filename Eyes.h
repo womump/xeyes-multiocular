@@ -26,6 +26,7 @@
 
 */
 
+#define MAX_EYES	(10u)
 #define N_EYES		(2u) /* FIXME temporary */
 
 #define XtNoutline	"outline"

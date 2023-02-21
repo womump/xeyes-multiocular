@@ -28,7 +28,7 @@ typedef struct {
 	 Boolean	shape_window;	/* use SetWindowShapeMask */
 	 int		update;		/* current timeout index */
 	 TPoint		mouse;		/* old mouse position */
-	 TPoint		pupil[N_EYES];	/* pupil position */
+	 TPoint		pupil[MAX_EYES];	/* pupil position */
 	 Transform	t;
 	 Transform	maskt;
 	 XtIntervalId	interval_id;
