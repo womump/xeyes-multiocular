@@ -26,6 +26,8 @@
 
 */
 
+#define N_EYES		(2u) /* FIXME temporary */
+
 #define XtNoutline	"outline"
 #define XtNcenterColor	"center"
 

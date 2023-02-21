@@ -386,8 +386,13 @@ static void Initialize (
     /* wait for Realize to add the timeout */
     w->eyes.interval_id = 0;
 
-    w->eyes.pupil[0].x = w->eyes.pupil[1].x = TPOINT_NONE;
-    w->eyes.pupil[0].y = w->eyes.pupil[1].y = TPOINT_NONE;
+    {
+	int j;
+	for (j=0; j<N_EYES; j++) {
+	    w->eyes.pupil[j].x = TPOINT_NONE;
+	    w->eyes.pupil[j].y = TPOINT_NONE;
+	}
+    }
 
     w->eyes.mouse.x = w->eyes.mouse.y = TPOINT_NONE;
 
@@ -594,7 +599,7 @@ static TPoint computePupil (
 static void computePupils (
     EyesWidget	w,
     TPoint	mouse,
-    TPoint	pupils[2])
+    TPoint	*pupils)
 {
     TRectangle screen, *sp = NULL;
     if (w->eyes.distance) {
@@ -610,8 +615,12 @@ static void computePupils (
 				&w->eyes.t);
 	sp = &screen;
     }
-    pupils[0] = computePupil (0, mouse, sp);
-    pupils[1] = computePupil (1, mouse, sp);
+    {
+	int i;
+	for (i=0; i<N_EYES; i++) {
+	    pupils[i] = computePupil (i, mouse, sp);
+	}
+    }
 }
 
 static void
@@ -628,15 +637,16 @@ eyeBall(EyesWidget	w,
 
 static void repaint_window (EyesWidget w)
 {
+	int i;
 	if (XtIsRealized ((Widget) w)) {
 #ifdef PRESENT
                 MakePresentData(w);
 #endif
-		eyeLiner (w, TRUE, 0);
-		eyeLiner (w, TRUE, 1);
+		for (i=0; i<N_EYES; i++)
+		    eyeLiner (w, TRUE, i);
 		computePupils (w, w->eyes.mouse, w->eyes.pupil);
-		eyeBall (w, TRUE, NULL, 0);
-		eyeBall (w, TRUE, NULL, 1);
+		for (i=0; i<N_EYES; i++)
+		    eyeBall (w, TRUE, NULL, i);
 #ifdef PRESENT
                 UpdatePresent(w);
 #endif
@@ -666,7 +676,7 @@ drawEye(EyesWidget w, TPoint newpupil, int num)
 static void
 drawEyes(EyesWidget w, TPoint mouse)
 {
-    TPoint		newpupil[2];
+    TPoint		newpupil[N_EYES];
     int			num;
 
 #ifdef PRESENT
@@ -678,7 +688,7 @@ drawEyes(EyesWidget w, TPoint mouse)
 	return;
     }
     computePupils (w, mouse, newpupil);
-    for (num = 0; num < 2; num ++) {
+    for (num = 0; num < N_EYES; num ++) {
 	drawEye(w, newpupil[num], num);
     }
 
@@ -769,8 +779,11 @@ static void Resize (Widget gw)
 	    XFillRectangle (dpy, w->eyes.shape_mask, w->eyes.gc[PART_SHAPE],
 			    0, 0, w->core.width, w->core.height);
 	    XSetForeground (dpy, w->eyes.gc[PART_SHAPE], 1);
-	    eyeLiner (w, FALSE, 0);
-	    eyeLiner (w, FALSE, 1);
+	    {
+		int i;
+		for (i=0; i<N_EYES; i++)
+		    eyeLiner (w, FALSE, i);
+	    }
 	    x = y = 0;
 	    for (parent = (Widget) w; XtParent (parent); parent = XtParent (parent)) {
 	    	x += parent->core.x + parent->core.border_width;
@@ -842,10 +855,13 @@ static void Redisplay(
     EyesWidget	w;
 
     w = (EyesWidget) gw;
-    w->eyes.pupil[0].x = TPOINT_NONE;
-    w->eyes.pupil[0].y = TPOINT_NONE;
-    w->eyes.pupil[1].x = TPOINT_NONE;
-    w->eyes.pupil[1].y = TPOINT_NONE;
+    {
+	int i;
+	for (i=0; i<N_EYES; i++) {
+	    w->eyes.pupil[i].x = TPOINT_NONE;
+	    w->eyes.pupil[i].y = TPOINT_NONE;
+	}
+    }
     (void) repaint_window ((EyesWidget)gw);
 }
 
