@@ -97,7 +97,7 @@ static XtResource resources[] = {
 # define EYE_DIAM	(2.0 - (EYE_THICK + EYE_OFFSET) * 2)
 # define BALL_DIST	((EYE_DIAM - BALL_DIAM) / 2.0 - BALL_PAD)
 # define W_MIN_X	(-1.0 + EYE_OFFSET)
-# define W_MAX_X	(3.0 - EYE_OFFSET)
+# define W_MAX_X	(-1.0 + (N_EYES*2.0) - EYE_OFFSET)
 # define W_MIN_Y	(-1.0 + EYE_OFFSET)
 # define W_MAX_Y	(1.0 - EYE_OFFSET)
 
