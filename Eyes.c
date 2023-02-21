@@ -88,8 +88,8 @@ static XtResource resources[] = {
 #undef offset
 #undef goffset
 
-# define EYE_X(n)	((n) * 2.0)
-# define EYE_Y(n)	(0.0)
+# define EYE_X(n)	(eye_x(n) * 2.0)
+# define EYE_Y(n)	(eye_y(n) * 2.0)
 # define EYE_OFFSET	(0.1)	/* padding between eyes */
 # define EYE_THICK	(0.175)	/* thickness of eye rim */
 # define BALL_DIAM	(0.3)
@@ -97,9 +97,9 @@ static XtResource resources[] = {
 # define EYE_DIAM	(2.0 - (EYE_THICK + EYE_OFFSET) * 2)
 # define BALL_DIST	((EYE_DIAM - BALL_DIAM) / 2.0 - BALL_PAD)
 # define W_MIN_X	(-1.0 + EYE_OFFSET)
-# define W_MAX_X	(-1.0 + (N_EYES*2.0) - EYE_OFFSET)
-# define W_MIN_Y	(-1.0 + EYE_OFFSET)
-# define W_MAX_Y	(1.0 - EYE_OFFSET)
+# define W_MAX_X	(-1.0 + (max_x()*2.0) - EYE_OFFSET)
+# define W_MIN_Y	(-1.0 + (min_y()*2.0) + EYE_OFFSET)
+# define W_MAX_Y	(-1.0 + (max_y()*2.0) - EYE_OFFSET)
 
 # define TPOINT_NONE	(-1000)	/* special value meaning "not yet set" */
 # define TPointEqual(a, b)  ((a).x == (b).x && (a).y == (b).y)
@@ -108,6 +108,76 @@ static XtResource resources[] = {
 					     A0 <= A || A <= A1)
 
 static int delays[] = { 50, 100, 200, 400, 0 };
+
+/*
+ * Procedural layout of eyes that happens to give the desired results
+ * for rows=3 and:
+ *   2 eyes (U+A66C CYRILLIC CAPITAL LETTER DOUBLE MONOCULAR O, trad xeyes)
+ *   7 eyes (Unicode <15.0 U+A66E CYRILLIC LETTER MULTIOCULAR O)
+ *   10 eyes (Unicode 15.0+ U+A66E CYRILLIC LETTER MULTIOCULAR O)
+ * The basic idea is to integer-divide-rounding-down the number of eyes by
+ * the number of rows, and then put any remainder eyes on the middle row.
+ * (This only really gives useful results for 3 rows.)
+ */
+
+#define EYES_ON_A_SHORT_ROW	((N_EYES)/(N_ROWS))
+#define REGULAR_EYES		((EYES_ON_A_SHORT_ROW)*(N_ROWS))
+#define SPARE_EYES		((N_EYES)-(REGULAR_EYES))
+#define EYES_ON_LONGEST_ROW	((EYES_ON_A_SHORT_ROW)+(SPARE_EYES))
+#define EYES_ON_SHORT_ROWS	((REGULAR_EYES)-(EYES_ON_A_SHORT_ROW))
+
+static int min_y(void)
+{
+	if (EYES_ON_A_SHORT_ROW > 0) {
+	    /* XXX: this won't be great for an even N_ROWS */
+	    return -(N_ROWS/2);
+	} else {
+	    return 0;
+	}
+}
+
+static int max_y(void)
+{
+	if (EYES_ON_A_SHORT_ROW > 0) {
+	    /* XXX: this won't be great for an even N_ROWS */
+	    return +(N_ROWS/2) + 1;
+	} else {
+	    return 1;
+	}
+}
+
+/* No need for min_x(), that's our fixed origin */
+
+static int max_x(void)
+{
+	return EYES_ON_LONGEST_ROW;
+}
+
+/* Draw the outer rows first, and the middle, longer row last */
+
+static double eye_x(int num)
+{
+	if (EYES_ON_SHORT_ROWS > 0 && num < EYES_ON_SHORT_ROWS) {
+	    int x = num % EYES_ON_A_SHORT_ROW;
+	    /* centre in row */
+	    return x + ((double)(EYES_ON_LONGEST_ROW-EYES_ON_A_SHORT_ROW))/2.0;
+	} else {
+	    /* Middle row */
+	    return num - EYES_ON_SHORT_ROWS;
+	}
+}
+
+static double eye_y(int num)
+{
+	if (EYES_ON_SHORT_ROWS > 0 && num < EYES_ON_SHORT_ROWS) {
+	    int y = min_y() + num/EYES_ON_A_SHORT_ROW;
+	    if (y>=0) y++;
+	    return y;
+	} else {
+	    /* Middle row */
+	    return 0;
+	}
+}
 
 static void ClassInitialize(void)
 {

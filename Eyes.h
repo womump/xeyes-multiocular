@@ -27,7 +27,8 @@
 */
 
 #define MAX_EYES	(10u)
-#define N_EYES		(2u) /* FIXME temporary */
+#define N_EYES		(10u) /* FIXME temporary */
+#define N_ROWS		(3u)
 
 #define XtNoutline	"outline"
 #define XtNcenterColor	"center"
