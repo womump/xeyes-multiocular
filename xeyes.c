@@ -50,6 +50,7 @@ usage(int exitval)
 	    "usage: xeyes [-display [{host}]:{vs}]\n"
 	    "             [-geometry [{width}][x{height}][{+-}{xoff}[{+-}{yoff}]]]\n"
 	    "             [-fg {color}] [-bg {color}] [-bd {color}] [-bw {pixels}]\n"
+	    "             [-multiocular {n}]\n"
 	    "             [-shape | +shape] [-outline {color}] [-center {color}]\n"
 	    "             [-backing {backing-store}] [-distance]\n"
 #ifdef XRENDER
@@ -70,6 +71,7 @@ static XrmOptionDescRec options[] = {
 {(char *)"-outline",	(char *)"*eyes.outline",	XrmoptionSepArg,	NULL},
 {(char *)"-center",	(char *)"*eyes.center",		XrmoptionSepArg,	NULL},
 {(char *)"-backing",	(char *)"*eyes.backingStore",	XrmoptionSepArg,	NULL},
+{(char *)"-multiocular",	(char *)"*eyes.multiocular",	XrmoptionSepArg,	NULL},
 {(char *)"-shape",	(char *)"*eyes.shapeWindow",	XrmoptionNoArg,		(char *)"TRUE"},
 {(char *)"+shape",	(char *)"*eyes.shapeWindow",	XrmoptionNoArg,		(char *)"FALSE"},
 #ifdef XRENDER

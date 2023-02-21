@@ -83,23 +83,28 @@ static XtResource resources[] = {
 #endif
     {(char *) XtNdistance, (char *) XtCBoolean, XtRBoolean, sizeof(Boolean),
 	offset(distance), XtRImmediate, (XtPointer) FALSE },
+    {(char *) XtNmultiocular, (char *) XtCValue, XtRInt, sizeof(int),
+	offset(multiocular), XtRImmediate, (XtPointer) 2 },
 };
 
 #undef offset
 #undef goffset
 
-# define EYE_X(n)	(eye_x(n) * 2.0)
-# define EYE_Y(n)	(eye_y(n) * 2.0)
+# define N_EYES(w)	(w->eyes.multiocular <= (MAX_EYES) \
+			    ? w->eyes.multiocular \
+			    : (MAX_EYES))
+# define EYE_X(w,n)	(eye_x(w,n) * 2.0)
+# define EYE_Y(w,n)	(eye_y(w,n) * 2.0)
 # define EYE_OFFSET	(0.1)	/* padding between eyes */
 # define EYE_THICK	(0.175)	/* thickness of eye rim */
 # define BALL_DIAM	(0.3)
 # define BALL_PAD	(0.175)
 # define EYE_DIAM	(2.0 - (EYE_THICK + EYE_OFFSET) * 2)
 # define BALL_DIST	((EYE_DIAM - BALL_DIAM) / 2.0 - BALL_PAD)
-# define W_MIN_X	(-1.0 + EYE_OFFSET)
-# define W_MAX_X	(-1.0 + (max_x()*2.0) - EYE_OFFSET)
-# define W_MIN_Y	(-1.0 + (min_y()*2.0) + EYE_OFFSET)
-# define W_MAX_Y	(-1.0 + (max_y()*2.0) - EYE_OFFSET)
+# define W_MIN_X(w)	(-1.0 + EYE_OFFSET)
+# define W_MAX_X(w)	(-1.0 + (max_x(w)*2.0) - EYE_OFFSET)
+# define W_MIN_Y(w)	(-1.0 + (min_y(w)*2.0) + EYE_OFFSET)
+# define W_MAX_Y(w)	(-1.0 + (max_y(w)*2.0) - EYE_OFFSET)
 
 # define TPOINT_NONE	(-1000)	/* special value meaning "not yet set" */
 # define TPointEqual(a, b)  ((a).x == (b).x && (a).y == (b).y)
@@ -120,15 +125,15 @@ static int delays[] = { 50, 100, 200, 400, 0 };
  * (This only really gives useful results for 3 rows.)
  */
 
-#define EYES_ON_A_SHORT_ROW	((N_EYES)/(N_ROWS))
-#define REGULAR_EYES		((EYES_ON_A_SHORT_ROW)*(N_ROWS))
-#define SPARE_EYES		((N_EYES)-(REGULAR_EYES))
-#define EYES_ON_LONGEST_ROW	((EYES_ON_A_SHORT_ROW)+(SPARE_EYES))
-#define EYES_ON_SHORT_ROWS	((REGULAR_EYES)-(EYES_ON_A_SHORT_ROW))
+#define EYES_ON_A_SHORT_ROW(w)	((N_EYES(w))/(N_ROWS))
+#define REGULAR_EYES(w)		((EYES_ON_A_SHORT_ROW(w))*(N_ROWS))
+#define SPARE_EYES(w)		((N_EYES(w))-(REGULAR_EYES(w)))
+#define EYES_ON_LONGEST_ROW(w)	((EYES_ON_A_SHORT_ROW(w))+(SPARE_EYES(w)))
+#define EYES_ON_SHORT_ROWS(w)	((REGULAR_EYES(w))-(EYES_ON_A_SHORT_ROW(w)))
 
-static int min_y(void)
+static int min_y(EyesWidget w)
 {
-	if (EYES_ON_A_SHORT_ROW > 0) {
+	if (EYES_ON_A_SHORT_ROW(w) > 0) {
 	    /* XXX: this won't be great for an even N_ROWS */
 	    return -(N_ROWS/2);
 	} else {
@@ -136,9 +141,9 @@ static int min_y(void)
 	}
 }
 
-static int max_y(void)
+static int max_y(EyesWidget w)
 {
-	if (EYES_ON_A_SHORT_ROW > 0) {
+	if (EYES_ON_A_SHORT_ROW(w) > 0) {
 	    /* XXX: this won't be great for an even N_ROWS */
 	    return +(N_ROWS/2) + 1;
 	} else {
@@ -148,29 +153,30 @@ static int max_y(void)
 
 /* No need for min_x(), that's our fixed origin */
 
-static int max_x(void)
+static int max_x(EyesWidget w)
 {
-	return EYES_ON_LONGEST_ROW;
+	return EYES_ON_LONGEST_ROW(w);
 }
 
 /* Draw the outer rows first, and the middle, longer row last */
 
-static double eye_x(int num)
+static double eye_x(EyesWidget w, int num)
 {
-	if (EYES_ON_SHORT_ROWS > 0 && num < EYES_ON_SHORT_ROWS) {
-	    int x = num % EYES_ON_A_SHORT_ROW;
+	if (EYES_ON_SHORT_ROWS(w) > 0 && num < EYES_ON_SHORT_ROWS(w)) {
+	    int x = num % EYES_ON_A_SHORT_ROW(w);
 	    /* centre in row */
-	    return x + ((double)(EYES_ON_LONGEST_ROW-EYES_ON_A_SHORT_ROW))/2.0;
+	    return x +
+		((double)(EYES_ON_LONGEST_ROW(w)-EYES_ON_A_SHORT_ROW(w)))/2.0;
 	} else {
 	    /* Middle row */
-	    return num - EYES_ON_SHORT_ROWS;
+	    return num - EYES_ON_SHORT_ROWS(w);
 	}
 }
 
-static double eye_y(int num)
+static double eye_y(EyesWidget w, int num)
 {
-	if (EYES_ON_SHORT_ROWS > 0 && num < EYES_ON_SHORT_ROWS) {
-	    int y = min_y() + num/EYES_ON_A_SHORT_ROW;
+	if (EYES_ON_SHORT_ROWS(w) > 0 && num < EYES_ON_SHORT_ROWS(w)) {
+	    int y = min_y(w) + num/EYES_ON_A_SHORT_ROW(w);
 	    if (y>=0) y++;
 	    return y;
 	} else {
@@ -458,7 +464,7 @@ static void Initialize (
 
     {
 	int j;
-	for (j=0; j<N_EYES; j++) {
+	for (j=0; j<N_EYES(w); j++) {
 	    w->eyes.pupil[j].x = TPOINT_NONE;
 	    w->eyes.pupil[j].y = TPOINT_NONE;
 	}
@@ -587,17 +593,18 @@ eyeLiner(EyesWidget	w,
 	 int		num)
 {
     drawEllipse(w, draw ? PART_OUTLINE : PART_SHAPE,
-		EYE_X(num), EYE_Y(num),
+		EYE_X(w, num), EYE_Y(w, num),
 		TPOINT_NONE, TPOINT_NONE,
 		EYE_DIAM + 2.0*EYE_THICK);
     if (draw) {
-	drawEllipse(w, PART_CENTER, EYE_X(num), EYE_Y(num),
+	drawEllipse(w, PART_CENTER, EYE_X(w, num), EYE_Y(w, num),
 		    TPOINT_NONE, TPOINT_NONE,
 		    EYE_DIAM);
     }
 }
 
 static TPoint computePupil (
+    EyesWidget	w,
     int		num,
     TPoint	mouse,
     const TRectangle *screen)
@@ -609,8 +616,8 @@ static TPoint computePupil (
 	double	cosa, sina;
 	TPoint	ret;
 
-	cx = EYE_X(num); dx = mouse.x - cx;
-	cy = EYE_Y(num); dy = mouse.y - cy;
+	cx = EYE_X(w, num); dx = mouse.x - cx;
+	cy = EYE_Y(w, num); dy = mouse.y - cy;
 	if (dx == 0 && dy == 0);
 	else {
 		angle = atan2 ((double) dy, (double) dx);
@@ -687,8 +694,8 @@ static void computePupils (
     }
     {
 	int i;
-	for (i=0; i<N_EYES; i++) {
-	    pupils[i] = computePupil (i, mouse, sp);
+	for (i=0; i<N_EYES(w); i++) {
+	    pupils[i] = computePupil (w, i, mouse, sp);
 	}
     }
 }
@@ -712,10 +719,10 @@ static void repaint_window (EyesWidget w)
 #ifdef PRESENT
                 MakePresentData(w);
 #endif
-		for (i=0; i<N_EYES; i++)
+		for (i=0; i<N_EYES(w); i++)
 		    eyeLiner (w, TRUE, i);
 		computePupils (w, w->eyes.mouse, w->eyes.pupil);
-		for (i=0; i<N_EYES; i++)
+		for (i=0; i<N_EYES(w); i++)
 		    eyeBall (w, TRUE, NULL, i);
 #ifdef PRESENT
                 UpdatePresent(w);
@@ -746,7 +753,7 @@ drawEye(EyesWidget w, TPoint newpupil, int num)
 static void
 drawEyes(EyesWidget w, TPoint mouse)
 {
-    TPoint		newpupil[N_EYES];
+    TPoint		newpupil[N_EYES(w)];
     int			num;
 
 #ifdef PRESENT
@@ -758,7 +765,7 @@ drawEyes(EyesWidget w, TPoint mouse)
 	return;
     }
     computePupils (w, mouse, newpupil);
-    for (num = 0; num < N_EYES; num ++) {
+    for (num = 0; num < N_EYES(w); num ++) {
 	drawEye(w, newpupil[num], num);
     }
 
@@ -817,8 +824,8 @@ static void Resize (Widget gw)
     	SetTransform (&w->eyes.t,
 		    	0, w->core.width,
  		    	w->core.height, 0,
-		    	W_MIN_X, W_MAX_X,
-		    	W_MIN_Y, W_MAX_Y);
+		    	W_MIN_X(w), W_MAX_X(w),
+		    	W_MIN_Y(w), W_MAX_Y(w));
 #ifdef PRESENT
         if (w->eyes.back_buffer) {
                 xcb_free_pixmap(xt_xcb(w),
@@ -851,7 +858,7 @@ static void Resize (Widget gw)
 	    XSetForeground (dpy, w->eyes.gc[PART_SHAPE], 1);
 	    {
 		int i;
-		for (i=0; i<N_EYES; i++)
+		for (i=0; i<N_EYES(w); i++)
 		    eyeLiner (w, FALSE, i);
 	    }
 	    x = y = 0;
@@ -927,7 +934,7 @@ static void Redisplay(
     w = (EyesWidget) gw;
     {
 	int i;
-	for (i=0; i<N_EYES; i++) {
+	for (i=0; i<N_EYES(w); i++) {
 	    w->eyes.pupil[i].x = TPOINT_NONE;
 	    w->eyes.pupil[i].y = TPOINT_NONE;
 	}

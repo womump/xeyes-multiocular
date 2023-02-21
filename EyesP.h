@@ -46,6 +46,7 @@ typedef struct {
          Boolean        present;
 #endif
 	 Boolean    	distance;
+	 int		multiocular;
    } EyesPart;
 
 #define xt_xcb(w)       (XGetXCBConnection(XtDisplay(w)))

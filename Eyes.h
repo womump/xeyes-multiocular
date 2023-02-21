@@ -27,7 +27,6 @@
 */
 
 #define MAX_EYES	(10u)
-#define N_EYES		(10u) /* FIXME temporary */
 #define N_ROWS		(3u)
 
 #define XtNoutline	"outline"
@@ -38,6 +37,7 @@
 
 #define XtNrender	"render"
 #define XtNdistance	"distance"
+#define XtNmultiocular	"multiocular"
 
 #define XtNpresent      "present"
 
